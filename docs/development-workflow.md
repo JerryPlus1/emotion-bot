@@ -1,18 +1,26 @@
-# Development Workflow
+# 开发工作流程
 
-## Branches
+## 分支
 
-- `dev`: shared development branch.
-- Feature branches should be created from `dev` and merged back after review.
+- `dev`：共享开发分支。
+- 功能分支应从 `dev` 创建，并在审查后合并回去。
 
-## Local Setup
+## 本地设置
 
-1. Create a virtual environment.
-2. Install dependencies with `pip install -r requirements.txt`.
-3. Copy `.env.example` to `.env` and fill in local-only values.
+1. 创建虚拟环境。
+2. 使用 `pip install -r requirements.txt` 安装依赖项。
+3. 将 `.env.example` 复制到 `.env` 并填写本地专用值。
 
-## Collaboration
+## 协作
 
-- Keep commits focused and descriptive.
-- Run available checks before pushing.
-- Do not commit local secrets or generated cache files.
+- 保持提交聚焦且描述性强。
+- 在推送前运行可用检查。
+- 不要提交本地密钥或生成的缓存文件。
+
+## 模型下载
+
+模型文件不提交到 Git 仓库，本地统一放在 `model/` 目录下。
+
+```bash
+git clone https://www.modelscope.cn/jiayi001/qwen-finetune-download.git model/qwen-finetune-download
+```
