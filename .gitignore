@@ -219,3 +219,7 @@ __marimo__/
 
 # Local model files
 model/
+
+# Local runtime data
+data/*.sqlite3
+data/*.sqlite3-*
