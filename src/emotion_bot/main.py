@@ -11,15 +11,17 @@ from fastapi.staticfiles import StaticFiles
 
 from .chat import ChatRequest, ChatResponse, ChatService, DocumentIngestRequest
 from .config import get_settings
+from .knowledge import ingest_knowledge_dir
 from .llm import LLMError, build_llm
 from .memory import MemoryManager
 from .proactive import ProactiveEngine
 from .storage import MemoryStore
-from .text_index import chunk_text
+from .text_index import chunk_text, embedding_backend_name
 
 
 settings = get_settings()
 store = MemoryStore(settings.db_path)
+knowledge_status = ingest_knowledge_dir(store, settings.knowledge_dir)
 memory_manager = MemoryManager(store)
 llm = build_llm(settings)
 proactive_engine = ProactiveEngine(store)
@@ -57,6 +59,9 @@ def health() -> dict:
         "db_path": str(settings.db_path),
         "llm_backend": settings.llm_backend,
         "effective_backend": getattr(llm, "backend_name", "unknown"),
+        "embedding_backend": embedding_backend_name(),
+        "knowledge_dir": str(settings.knowledge_dir),
+        "knowledge": knowledge_status,
         "offline": True,
     }
 

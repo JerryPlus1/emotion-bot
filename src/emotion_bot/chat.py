@@ -132,12 +132,16 @@ class ChatService:
             self.store.search_messages(request.user_id, request.message, limit=8),
             request.history_weight,
         )
+        chapter_title_items = scale_scores(
+            self.store.find_document_chapter_titles(request.message, user_id=request.user_id, limit=4),
+            request.document_weight,
+        )
         document_items = scale_scores(
             self.store.search_documents(request.message, user_id=request.user_id, limit=8),
             request.document_weight,
         )
         ranked = sorted(
-            memory_items + history_items + document_items,
+            memory_items + history_items + chapter_title_items + document_items,
             key=lambda item: item.score,
             reverse=True,
         )

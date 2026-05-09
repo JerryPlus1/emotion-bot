@@ -10,7 +10,8 @@ src/emotion_bot/
   storage.py       SQLite 存储
   memory.py        长期记忆抽取和用户画像总结
   proactive.py     主动对话触发
-  text_index.py    本地稀疏向量检索
+  text_index.py    embedding 检索
+  knowledge.py     knowledge 目录文本导入
   static/          前端页面
 ```
 
@@ -102,7 +103,22 @@ curl -X POST http://127.0.0.1:8000/api/chat `
 
 ## 7. 知识库
 
-前端右侧可以写入知识库文本。服务端会自动切分文本并建立本地稀疏向量索引。
+前端右侧可以写入知识库文本。服务端会自动切分文本并建立 embedding 索引。
+
+启动时服务端也会自动读取 `data/knowledge/` 下的 `.txt` 文件，按文件名作为标题写入全局知识库。当前项目中的《全球通史》可以这样放置：
+
+```text
+data/knowledge/《全球通史》.txt
+```
+
+embedding 配置在 `.env` 中：
+
+```text
+EMOTION_BOT_EMBEDDING_BACKEND=auto
+EMOTION_BOT_EMBEDDING_MODEL=BAAI/bge-small-zh-v1.5
+```
+
+`auto` 会优先使用 `fastembed` 模型；如果当前环境没有安装或模型不可用，会退回本地 hashing embedding，保证离线调试仍可运行。
 
 API 调用示例：
 

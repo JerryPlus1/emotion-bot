@@ -66,8 +66,11 @@ class AppSettings:
     root_dir: Path = ROOT_DIR
     model_path: Path = _path_env("EMOTION_BOT_MODEL_PATH", DEFAULT_MODEL_PATH)
     data_dir: Path = _path_env("EMOTION_BOT_DATA_DIR", ROOT_DIR / "data")
+    knowledge_dir: Path = _path_env("EMOTION_BOT_KNOWLEDGE_DIR", ROOT_DIR / "data" / "knowledge")
     db_path: Path = _path_env("EMOTION_BOT_DB_PATH", ROOT_DIR / "data" / "emotion_bot.sqlite3")
     llm_backend: str = os.getenv("EMOTION_BOT_LLM_BACKEND", "auto")
+    embedding_backend: str = os.getenv("EMOTION_BOT_EMBEDDING_BACKEND", "auto")
+    embedding_model_name: str = os.getenv("EMOTION_BOT_EMBEDDING_MODEL", "BAAI/bge-small-zh-v1.5")
     host: str = os.getenv("EMOTION_BOT_HOST", "127.0.0.1")
     port: int = _int_env("EMOTION_BOT_PORT", 8000)
     n_ctx: int = _int_env("EMOTION_BOT_N_CTX", 4096)
@@ -84,4 +87,5 @@ class AppSettings:
 def get_settings() -> AppSettings:
     settings = AppSettings()
     settings.data_dir.mkdir(parents=True, exist_ok=True)
+    settings.knowledge_dir.mkdir(parents=True, exist_ok=True)
     return settings

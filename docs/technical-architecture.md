@@ -70,13 +70,13 @@ offline = true
 
 ## 5. 检索与 RAG 设计
 
-由于项目要求本地离线运行，没有额外依赖在线 embedding 服务，所以当前实现使用本地稀疏检索：
+当前实现通过 `src/emotion_bot/text_index.py` 提供统一 embedding 接口：
 
-- 对文本做分词和简单哈希向量化。
-- 结合：
-  - 向量相似度
-  - 关键词重叠
-  - 用户配置的权重
+- `EMOTION_BOT_EMBEDDING_BACKEND=auto` 时优先使用 `fastembed` 本地 embedding 模型。
+- 未安装或不可用时退回 hashing embedding，保证离线调试可运行。
+- 最终排序结合向量相似度、关键词重叠和用户配置的权重。
+
+启动时 `src/emotion_bot/knowledge.py` 会读取 `data/knowledge/*.txt`，自动切分并写入全局知识库。
 
 检索来源包括三类：
 
@@ -178,14 +178,14 @@ data/emotion_bot.sqlite3
 
 ## 9. 当前限制
 
-- 当前检索是轻量本地稀疏检索，不是高精度语义 embedding。
+- embedding 精度取决于当前后端；hashing embedding 适合离线保底，真实语义检索建议安装 `fastembed`。
 - 主动对话仍然是规则触发，不是完全自主规划。
 - TTS 使用浏览器自带语音，不是模型原生语音合成。
 - 模型回复风格仍然受当前 `GGUF` 模型本身能力限制。
 
 ## 10. 后续可扩展方向
 
-- 接入本地 embedding 模型，替代当前哈希检索。
+- 增加可视化知识库重建入口和 embedding 缓存管理。
 - 增加记忆编辑、删除和人工确认机制。
 - 引入定时任务或桌面提醒，让主动对话不只依赖页面轮询。
 - 增加更细的人设控制和情绪陪伴 prompt 模板。
