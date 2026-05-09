@@ -74,6 +74,12 @@ def _clean_fragment(text: str, max_length: int = 80) -> str:
     return text[:max_length].strip()
 
 
+def _looks_like_question(text: str) -> bool:
+    return any(token in text for token in ["什么", "怎么", "如何", "哪", "谁", "吗", "么"]) or any(
+        marker in text for marker in ["?", "？"]
+    )
+
+
 def extract_memory_candidates(message: str) -> list[MemoryCandidate]:
     candidates: list[MemoryCandidate] = []
     text = message.strip()
@@ -100,10 +106,15 @@ def extract_memory_candidates(message: str) -> list[MemoryCandidate]:
         target = lowered if pattern.startswith("(?:my") or pattern.startswith("(?:i") else text
         for match in re.finditer(pattern, target, flags=re.IGNORECASE):
             fragment = _clean_fragment(match.group(1))
-            if fragment:
+            if fragment and not _looks_like_question(fragment):
                 candidates.append(MemoryCandidate(kind=kind, content=template.format(fragment), weight=weight))
 
-    if not candidates and len(text) >= 24 and re.search(r"\b我\b|我|我的|最近|以后|打算|喜欢|担心|压力", text):
+    if (
+        not candidates
+        and len(text) >= 24
+        and not _looks_like_question(text)
+        and re.search(r"\b我\b|我|我的|最近|以后|打算|喜欢|担心|压力", text)
+    ):
         candidates.append(
             MemoryCandidate(kind="note", content=f"用户曾提到：{_clean_fragment(text, 120)}", weight=0.7)
         )

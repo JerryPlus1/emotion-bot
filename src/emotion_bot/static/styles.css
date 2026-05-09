@@ -231,6 +231,23 @@ input[type="range"] {
   background: rgba(255, 255, 255, 0.68);
 }
 
+.header-copy,
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-copy {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.header-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .toolbar-button,
 .icon-button {
   display: inline-flex;
@@ -238,11 +255,13 @@ input[type="range"] {
   justify-content: center;
   gap: 7px;
   min-height: 38px;
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: #fff;
   color: var(--ink);
   padding: 0 12px;
+  text-decoration: none;
 }
 
 .toolbar-button svg,
@@ -267,6 +286,10 @@ input[type="range"] {
 
 .toolbar-button.secondary {
   background: transparent;
+}
+
+.toolbar-button.compact {
+  min-width: 112px;
 }
 
 .proactive-banner {
@@ -361,9 +384,14 @@ input[type="range"] {
 }
 
 .composer-actions {
-  display: flex;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(112px, 132px));
   gap: 10px;
+  justify-content: end;
+}
+
+.composer-actions-wide {
+  grid-template-columns: repeat(3, minmax(112px, 132px));
 }
 
 pre {
@@ -438,6 +466,69 @@ pre {
   line-height: 1.5;
 }
 
+.lab-body {
+  min-height: 100vh;
+}
+
+.lab-shell {
+  display: grid;
+  gap: 14px;
+  width: min(1320px, calc(100vw - 24px));
+  margin: 12px auto;
+}
+
+.lab-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(15, 118, 110, 0.12), rgba(37, 99, 235, 0.08)),
+    rgba(251, 251, 248, 0.96);
+  box-shadow: var(--shadow);
+}
+
+.lab-eyebrow {
+  color: var(--teal-dark);
+  font-weight: 700;
+}
+
+.lab-copy {
+  max-width: 760px;
+  line-height: 1.6;
+}
+
+.lab-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.lab-card {
+  overflow: auto;
+}
+
+.lab-card h2 {
+  margin-bottom: 10px;
+}
+
+.lab-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.lab-steps {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--ink);
+  line-height: 1.7;
+}
+
 @media (max-width: 1100px) {
   .app-shell {
     grid-template-columns: 240px minmax(0, 1fr);
@@ -470,10 +561,33 @@ pre {
     min-height: 70vh;
   }
 
-  .chat-header,
-  .composer-actions {
+  .chat-header {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .header-actions {
+    justify-content: stretch;
+  }
+
+  .composer-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .composer-actions-wide {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .lab-shell {
+    width: calc(100vw - 16px);
+    margin: 8px auto;
+  }
+
+  .lab-hero,
+  .lab-grid {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .message {

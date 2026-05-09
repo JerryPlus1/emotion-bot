@@ -214,17 +214,22 @@ class MemoryStore:
             ).fetchall()
 
         results: list[SearchResult] = []
+        seen_contents: set[str] = set()
         for row in rows:
+            content = f'{row["role"]}: {row["content"]}'
+            if content in seen_contents:
+                continue
             vector_score = cosine_similarity(query_vector, deserialize_vector(row["embedding_json"]))
             overlap_score = keyword_overlap(query, row["content"])
             if overlap_score <= 0:
                 continue
             score = vector_score * 0.75 + overlap_score * 0.25
+            seen_contents.add(content)
             results.append(
                 SearchResult(
                     id=int(row["id"]),
                     type="history",
-                    content=f'{row["role"]}: {row["content"]}',
+                    content=content,
                     score=score,
                     weight=1.0,
                     created_at=row["created_at"],
@@ -433,3 +438,7 @@ class MemoryStore:
                 item["metadata"] = {}
             events.append(item)
         return events
+
+    def delete_user_data(self, user_id: str) -> None:
+        with self._lock, self._connection() as connection:
+            connection.execute("DELETE FROM users WHERE user_id = ?", (user_id,))

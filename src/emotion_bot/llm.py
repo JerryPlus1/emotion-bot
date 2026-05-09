@@ -6,6 +6,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 from threading import Lock
+from typing import Any
 
 from .config import AppSettings
 
@@ -24,12 +25,20 @@ class GenerationOptions:
 
 
 class BaseLLM:
+    backend_name = "base"
+
     def generate(self, prompt: str, options: GenerationOptions) -> str:
         raise NotImplementedError
+
+    def generate_chat(self, messages: list[dict[str, str]], options: GenerationOptions) -> str:
+        prompt = "\n".join(f"{message['role']}：{message['content']}" for message in messages)
+        return self.generate(f"{prompt}\nassistant：", options)
 
 
 class MockLLM(BaseLLM):
     """Deterministic fallback for tests and UI smoke checks."""
+
+    backend_name = "mock"
 
     def generate(self, prompt: str, options: GenerationOptions) -> str:
         del options
@@ -41,8 +50,22 @@ class MockLLM(BaseLLM):
             f"你刚才说的是：{last_user}"
         )
 
+    def generate_chat(self, messages: list[dict[str, str]], options: GenerationOptions) -> str:
+        del options
+        last_user = ""
+        for message in reversed(messages):
+            if message["role"] == "user":
+                last_user = message["content"].strip()
+                break
+        return (
+            "我已经收到你的消息。当前运行在 mock 模式，说明后端链路、记忆和前端都可以工作；"
+            f"你刚才说的是：{last_user or '空消息'}"
+        )
+
 
 class LlamaCppLLM(BaseLLM):
+    backend_name = "llama-cpp-gguf"
+
     def __init__(self, settings: AppSettings):
         self.settings = settings
         self.model_path = settings.model_path
@@ -84,6 +107,19 @@ class LlamaCppLLM(BaseLLM):
                 echo=False,
             )
         text = result["choices"][0]["text"].strip()
+        return text or "我在认真想，但这次没有生成出有效回复。你可以换一种说法再试试。"
+
+    def generate_chat(self, messages: list[dict[str, str]], options: GenerationOptions) -> str:
+        with self._lock:
+            model = self._load()
+            result: dict[str, Any] = model.create_chat_completion(
+                messages=messages,
+                max_tokens=options.max_tokens,
+                temperature=options.temperature,
+                top_p=options.top_p,
+                stop=["<|im_end|>", "<|endoftext|>"],
+            )
+        text = result["choices"][0]["message"]["content"].strip()
         return text or "我在认真想，但这次没有生成出有效回复。你可以换一种说法再试试。"
 
 

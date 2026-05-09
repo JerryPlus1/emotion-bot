@@ -43,6 +43,11 @@ def index() -> FileResponse:
     return FileResponse(STATIC_DIR / "index.html")
 
 
+@app.get("/memory-lab")
+def memory_lab() -> FileResponse:
+    return FileResponse(STATIC_DIR / "memory-lab.html")
+
+
 @app.get("/api/health")
 def health() -> dict:
     return {
@@ -51,6 +56,8 @@ def health() -> dict:
         "model_exists": settings.model_path.exists(),
         "db_path": str(settings.db_path),
         "llm_backend": settings.llm_backend,
+        "effective_backend": getattr(llm, "backend_name", "unknown"),
+        "offline": True,
     }
 
 
@@ -78,6 +85,12 @@ def user_memory(user_id: str, limit: int = Query(default=50, ge=1, le=200)) -> d
     }
 
 
+@app.delete("/api/users/{user_id}")
+def delete_user(user_id: str) -> dict:
+    store.delete_user_data(user_id)
+    return {"ok": True, "user_id": user_id}
+
+
 @app.post("/api/documents")
 def ingest_document(request: DocumentIngestRequest) -> dict:
     chunks = chunk_text(request.content)
@@ -99,8 +112,14 @@ def proactive_check(
     user_id: str = Query(default="default", min_length=1),
     scenario: str | None = Query(default=None, max_length=120),
     persist: bool = Query(default=True),
+    force: bool = Query(default=False),
 ) -> dict:
-    suggestion = proactive_engine.check(user_id=user_id, scenario=scenario, persist=persist)
+    suggestion = proactive_engine.check(
+        user_id=user_id,
+        scenario=scenario,
+        persist=persist,
+        force=force,
+    )
     return suggestion.__dict__
 
 

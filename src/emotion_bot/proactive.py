@@ -29,6 +29,7 @@ class ProactiveEngine:
         scenario: str | None = None,
         now: datetime | None = None,
         persist: bool = True,
+        force: bool = False,
     ) -> ProactiveSuggestion:
         self.store.ensure_user(user_id)
         now = now or datetime.now(ZoneInfo(self.local_timezone))
@@ -40,10 +41,12 @@ class ProactiveEngine:
         inactivity_trigger = self._inactivity_trigger(user_id, now)
 
         chosen = scenario_trigger or trigger or inactivity_trigger
+        if not chosen and force:
+            chosen = "manual"
         if not chosen:
             return ProactiveSuggestion(False, "", "", "")
 
-        if self._recently_sent(user_id, chosen, now):
+        if not force and self._recently_sent(user_id, chosen, now):
             return ProactiveSuggestion(False, "", "", "")
 
         topic, context = self._topic_from_memory(user_id, chosen)
@@ -118,8 +121,8 @@ class ProactiveEngine:
             "noon": "午饭 休息 工作 学习 压力",
             "evening": "今天 最近 喜欢 计划 放松",
             "late_night": "睡眠 压力 情绪 明天",
-            "work_focus": "工作 任务 计划 压力",
-            "study_focus": "学习 计划 目标",
+            "work_focus": "工作 任务 计划 压力 准备 面试",
+            "study_focus": "学习 计划 目标 准备",
             "stress": "压力 担心 情绪 低落",
             "break": "休息 久坐 健康",
             "health": "运动 健康 习惯",
@@ -127,6 +130,7 @@ class ProactiveEngine:
             "inactivity": "最近 计划 喜欢 目标",
             "scene": "最近 计划 喜欢",
             "welcome": "欢迎 开始",
+            "manual": "最近 计划 喜欢 目标",
         }
         query = query_by_trigger.get(trigger, "最近")
         memories = self.store.search_memories(user_id, query, limit=3)
@@ -147,6 +151,7 @@ class ProactiveEngine:
             "evening": "今天过得怎么样",
             "late_night": "睡前放松一下",
             "welcome": "第一次聊天",
+            "manual": "现在最想聊的事",
         }
         return fallback.get(trigger, "聊聊现在的状态"), context
 
@@ -165,5 +170,6 @@ class ProactiveEngine:
             "inactivity": "有一阵没聊了。我还记得「{topic}」，想听听后来怎么样了。",
             "scene": "我检测到新的场景。要不要从「{topic}」开始聊？",
             "welcome": "欢迎回来。我们可以从今天的心情开始，也可以告诉我你希望我记住什么。",
+            "manual": "我主动来开个头吧。想到「{topic}」，你愿意从这里开始聊吗？",
         }
         return templates.get(trigger, "要不要聊聊「{topic}」？").format(topic=topic)

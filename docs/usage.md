@@ -23,13 +23,13 @@ data/emotion_bot.sqlite3
 ## 2. 安装
 
 ```bash
-python -m venv .venv
+py -3.12 -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 copy .env.example .env
 ```
 
-`llama-cpp-python` 在不同机器上安装速度可能不同。如果本机有 CUDA、Metal 或其他加速需求，请按 `llama-cpp-python` 官方方式安装对应构建版本。
+建议使用 Python 3.12。当前 `requirements.txt` 已包含 CPU 预编译 wheel 的额外索引，Windows 下通常不需要安装 C++ 编译器。如果本机有 CUDA 或其他加速需求，请按 `llama-cpp-python` 对应加速 wheel 方式替换安装。
 
 ## 3. 模型
 
@@ -50,20 +50,26 @@ EMOTION_BOT_MODEL_PATH=D:\path\to\model.gguf
 真实模型模式：
 
 ```bash
-uvicorn emotion_bot.main:app --app-dir src --host 127.0.0.1 --port 8000
+.venv\Scripts\python -m uvicorn emotion_bot.main:app --app-dir src --host 127.0.0.1 --port 8000
 ```
 
 调试模式：
 
 ```bash
 $env:EMOTION_BOT_LLM_BACKEND="mock"
-uvicorn emotion_bot.main:app --app-dir src --host 127.0.0.1 --port 8000
+.venv\Scripts\python -m uvicorn emotion_bot.main:app --app-dir src --host 127.0.0.1 --port 8000
 ```
 
 打开：
 
 ```text
 http://127.0.0.1:8000
+```
+
+记忆能力和主动对话能力测试页：
+
+```text
+http://127.0.0.1:8000/memory-lab
 ```
 
 ## 5. 记忆与 RAG
@@ -124,6 +130,20 @@ GET /api/proactive/check?user_id=alice&scenario=工作
 
 如果命中触发条件，机器人会在聊天区主动发起一句话。触发内容会优先结合相关长期记忆；没有相关记忆时使用新的通用话题。
 
+## 8.1 推荐测试方案
+
+可以直接打开 `http://127.0.0.1:8000/memory-lab`，页面里已经内置两类测试：
+
+- `测试记忆`：自动发送一条带身份、偏好、计划的信息，再追问“你还记得我最近在准备什么吗”，用于验证历史召回和长期记忆抽取。
+- `测试主动对话`：根据当前场景调用主动对话接口，观察是否会结合刚才记住的用户信息生成更贴近的主动开场。
+
+如果想手工验证，推荐顺序是：
+
+1. 在主聊天页发送“我叫小周，我喜欢夜跑，我最近在准备转岗面试”。
+2. 再发送“你还记得我最近在准备什么吗？”。
+3. 设置场景为 `工作`，点击“主动检查”。
+4. 把记忆模式切到 `关闭`，重复第 2 步和第 3 步，对比有无记忆时的区别。
+
 ## 9. TTS
 
 前端的“语音输出”使用浏览器内置 Web Speech API，不需要额外服务端依赖。不同浏览器可用的中文声音不同，建议使用 Edge 或 Chrome。
@@ -146,3 +166,11 @@ GET  /api/proactive/check
 - 模型回复太短时增加 `EMOTION_BOT_MAX_TOKENS`。
 - 自动记忆触发太频繁时提高 `EMOTION_BOT_AUTO_MEMORY_THRESHOLD`。
 - 自动记忆触发太少时降低 `EMOTION_BOT_AUTO_MEMORY_THRESHOLD`。
+
+## 12. 技术说明
+
+系统架构、主动对话设计、离线 GGUF 运行方式和存储结构说明见：
+
+```text
+docs/technical-architecture.md
+```

@@ -18,6 +18,7 @@ const el = {
   scenarioInput: document.querySelector("#scenarioInput"),
   ttsToggle: document.querySelector("#ttsToggle"),
   proactiveBtn: document.querySelector("#proactiveBtn"),
+  startTalkBtn: document.querySelector("#startTalkBtn"),
   proactiveBanner: document.querySelector("#proactiveBanner"),
   sessionMeta: document.querySelector("#sessionMeta"),
   messages: document.querySelector("#messages"),
@@ -42,9 +43,7 @@ function init() {
   refreshHealth();
   loadMemory();
   setInterval(checkProactive, 45000);
-  if (window.lucide) {
-    window.lucide.createIcons();
-  }
+  createIcons();
 }
 
 function bindEvents() {
@@ -63,7 +62,8 @@ function bindEvents() {
   });
 
   el.refreshMemoryBtn.addEventListener("click", loadMemory);
-  el.proactiveBtn.addEventListener("click", () => checkProactive(true));
+  el.proactiveBtn.addEventListener("click", () => checkProactive(true, false));
+  el.startTalkBtn.addEventListener("click", startProactiveConversation);
   el.clearBtn.addEventListener("click", () => {
     el.messages.innerHTML = "";
     renderWelcome();
@@ -71,7 +71,8 @@ function bindEvents() {
   el.ingestBtn.addEventListener("click", ingestDocument);
   el.chatForm.addEventListener("submit", sendMessage);
   el.messageInput.addEventListener("keydown", (event) => {
-    if (event.ctrlKey && event.key === "Enter") {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
       el.chatForm.requestSubmit();
     }
   });
@@ -98,7 +99,13 @@ function renderWelcome() {
 async function refreshHealth() {
   try {
     const data = await apiGet("/api/health");
-    el.healthText.textContent = data.model_exists ? "本地模型已找到" : "未找到本地模型";
+    if (data.effective_backend === "llama-cpp-gguf" && data.model_exists) {
+      el.healthText.textContent = "离线 GGUF 模型就绪";
+    } else if (data.effective_backend === "mock") {
+      el.healthText.textContent = "mock 调试模式";
+    } else {
+      el.healthText.textContent = data.model_exists ? "本地模型已找到" : "未找到本地模型";
+    }
   } catch (error) {
     el.healthText.textContent = "服务未连接";
   }
@@ -155,7 +162,7 @@ async function sendMessage(event) {
 function appendTyping() {
   const node = document.createElement("article");
   node.className = "message assistant typing";
-  node.innerHTML = `<div class="meta-row">Emotion Bot</div><div class="bubble">正在思考...</div>`;
+  node.innerHTML = '<div class="meta-row">Emotion Bot</div><div class="bubble">正在思考...</div>';
   el.messages.appendChild(node);
   scrollMessages();
 }
@@ -175,7 +182,7 @@ function appendMessage(role, content, meta) {
       <span>${escapeHtml(meta || (role === "user" ? "你" : "Emotion Bot"))}</span>
       ${
         canSpeak
-          ? `<button class="speak-button" type="button" title="朗读"><i data-lucide="volume-2"></i></button>`
+          ? '<button class="speak-button" type="button" title="朗读"><i data-lucide="volume-2"></i></button>'
           : ""
       }
     </div>
@@ -185,9 +192,7 @@ function appendMessage(role, content, meta) {
     node.querySelector(".speak-button").addEventListener("click", () => speak(content));
   }
   el.messages.appendChild(node);
-  if (window.lucide) {
-    window.lucide.createIcons();
-  }
+  createIcons();
   scrollMessages();
 }
 
@@ -212,7 +217,7 @@ function renderProfile(summary) {
 
 function renderMemories(memories) {
   if (!memories.length) {
-    el.memoryList.innerHTML = `<p class="empty">暂无长期记忆</p>`;
+    el.memoryList.innerHTML = '<p class="empty">暂无长期记忆</p>';
     return;
   }
   el.memoryList.innerHTML = memories
@@ -232,7 +237,7 @@ function renderMemories(memories) {
 
 function renderContexts(contexts) {
   if (!contexts.length) {
-    el.contextList.innerHTML = `<p class="empty">本轮没有使用上下文</p>`;
+    el.contextList.innerHTML = '<p class="empty">本轮没有使用上下文</p>';
     return;
   }
   el.contextList.innerHTML = contexts
@@ -277,17 +282,19 @@ async function ingestDocument() {
   }
 }
 
-async function checkProactive(manual = false) {
+async function checkProactive(manual = false, force = false, appendToChat = true) {
   try {
     const params = new URLSearchParams({
       user_id: currentUserId(),
       persist: "true",
+      force: force ? "true" : "false",
     });
     const scenario = el.scenarioInput.value.trim();
     if (scenario) params.set("scenario", scenario);
     const data = await apiGet(`/api/proactive/check?${params.toString()}`);
     if (data.active) {
-      showProactive(data, true);
+      showProactive(data, appendToChat);
+      return data;
     } else if (manual) {
       showProactive(
         {
@@ -298,10 +305,30 @@ async function checkProactive(manual = false) {
         false
       );
     }
+    return data;
   } catch (error) {
     if (manual) {
       showProactive({ trigger: "error", topic: "连接", message: `主动检查失败：${error.message}` }, false);
     }
+    throw error;
+  }
+}
+
+async function startProactiveConversation() {
+  if (state.sending) return;
+  el.startTalkBtn.disabled = true;
+  try {
+    const data = await checkProactive(false, true, false);
+    if (data && data.active && data.message) {
+      appendMessage("assistant", data.message, `主动对话：${data.trigger}`);
+      if (el.ttsToggle.checked) {
+        speak(data.message);
+      }
+    }
+  } catch (error) {
+    appendMessage("assistant", `主动对话失败：${error.message}`, "错误");
+  } finally {
+    el.startTalkBtn.disabled = false;
   }
 }
 
@@ -371,6 +398,12 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function createIcons() {
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 }
 
 init();

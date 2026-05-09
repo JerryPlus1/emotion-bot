@@ -74,27 +74,37 @@
 
       <main class="chat-panel">
         <header class="chat-header">
-          <div>
+          <div class="header-copy">
             <h2>聊天</h2>
             <p id="sessionMeta">自动判断是否需要记忆</p>
           </div>
-          <button id="proactiveBtn" class="toolbar-button" type="button">
-            <i data-lucide="sparkles"></i>
-            <span>主动检查</span>
-          </button>
+          <div class="header-actions">
+            <a class="toolbar-button secondary" href="/memory-lab">
+              <i data-lucide="flask-conical"></i>
+              <span>记忆实验室</span>
+            </a>
+            <button id="proactiveBtn" class="toolbar-button" type="button">
+              <i data-lucide="scan-heart"></i>
+              <span>主动检查</span>
+            </button>
+          </div>
         </header>
 
         <section id="proactiveBanner" class="proactive-banner hidden"></section>
         <section id="messages" class="messages" aria-live="polite"></section>
 
         <form id="chatForm" class="composer">
-          <textarea id="messageInput" rows="3" placeholder="输入消息，按 Ctrl + Enter 发送"></textarea>
-          <div class="composer-actions">
-            <button id="clearBtn" class="toolbar-button secondary" type="button">
+          <textarea id="messageInput" rows="3" placeholder="输入消息，按 Enter 发送，Shift + Enter 换行"></textarea>
+          <div class="composer-actions composer-actions-wide">
+            <button id="clearBtn" class="toolbar-button secondary compact" type="button">
               <i data-lucide="eraser"></i>
               <span>清屏</span>
             </button>
-            <button id="sendBtn" class="toolbar-button primary" type="submit">
+            <button id="startTalkBtn" class="toolbar-button secondary compact" type="button">
+              <i data-lucide="message-circle-heart"></i>
+              <span>主动对话</span>
+            </button>
+            <button id="sendBtn" class="toolbar-button primary compact" type="submit">
               <i data-lucide="send"></i>
               <span>发送</span>
             </button>
