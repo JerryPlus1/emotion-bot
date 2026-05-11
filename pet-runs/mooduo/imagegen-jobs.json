@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "created_at": "2026-05-09T09:15:00.711669+00:00",
-  "run_dir": "D:\\PythonProject\\emotion-bot\\pet-runs\\mooduo",
+  "run_dir": "pet-runs/mooduo",
   "primary_generation_skill": "$imagegen",
   "jobs": [
     {
@@ -16,7 +16,7 @@
       "requires_grounded_generation": false,
       "allow_prompt_only_generation": true,
       "recording_owner": "parent",
-      "source_path": "C:\\Users\\17827\\.codex\\generated_images\\019e0c01-ddf5-7933-a4cb-d7e2275a1028\\ig_0ca2dd73f2fe96e30169fefb31fcd081919ba92f114991d997.png",
+      "source_path": "decoded/base.png",
       "source_provenance": "built-in-imagegen",
       "source_sha256": "2ccffd7a3aff911293f88a12a3eaa86f0ec03555765f95fc8ecc0d531d35d61b",
       "output_sha256": "2ccffd7a3aff911293f88a12a3eaa86f0ec03555765f95fc8ecc0d531d35d61b",
