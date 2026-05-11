@@ -126,6 +126,24 @@
         <section class="control-section">
           <h3>知识库</h3>
           <input id="docTitle" type="text" placeholder="标题" />
+          <div class="file-card">
+            <label class="file-picker" for="docFile">
+              <span class="file-icon"><i data-lucide="file-up"></i></span>
+              <span class="file-copy">
+                <strong id="docFileName">选择知识文件</strong>
+                <small id="docFileMeta">支持 txt / md / csv / json / log</small>
+              </span>
+              <span class="file-action">浏览</span>
+            </label>
+            <input id="docFile" class="visually-hidden" type="file" accept=".txt,.md,.markdown,.csv,.json,.log,text/*,application/json" />
+            <div class="file-options">
+              <label for="docEncoding">编码</label>
+              <select id="docEncoding" title="文件编码">
+                <option value="utf-8" selected>UTF-8</option>
+                <option value="gb18030">GB18030</option>
+              </select>
+            </div>
+          </div>
           <textarea id="docContent" rows="5" placeholder="粘贴知识文本"></textarea>
           <button id="ingestBtn" class="toolbar-button" type="button">
             <i data-lucide="database-zap"></i>

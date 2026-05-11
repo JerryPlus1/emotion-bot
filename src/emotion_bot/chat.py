@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Literal
+from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, Field
 
@@ -118,6 +120,106 @@ class ChatService:
             profile_summary=profile_summary,
             proactive_hint=proactive_hint.__dict__ if proactive_hint.active else None,
         )
+
+    def generate_proactive_message(
+        self,
+        user_id: str,
+        scenario: str | None = None,
+        force: bool = False,
+        persist: bool = True,
+    ) -> dict:
+        user_id = user_id.strip() or "default"
+        now = datetime.now(ZoneInfo("Asia/Shanghai"))
+        suggestion = self.proactive.check(
+            user_id=user_id,
+            scenario=scenario,
+            now=now,
+            persist=False,
+            force=force,
+        )
+        if not suggestion.active:
+            return suggestion.__dict__
+
+        profile_summary = self.store.get_profile_summary(user_id)
+        recent_messages = self.store.recent_messages(user_id, limit=8)
+        memory_items = self.store.search_memories(user_id, suggestion.topic, limit=5)
+        history_items = self.store.search_messages(user_id, suggestion.topic, limit=5)
+        context_items = sorted(
+            memory_items + history_items,
+            key=lambda item: item.score,
+            reverse=True,
+        )[:8]
+
+        context_lines = [
+            f"当前时间：{now.strftime('%Y-%m-%d %H:%M')}",
+            f"触发原因：{suggestion.trigger}",
+            f"当前场景：{scenario or '无'}",
+            f"候选主题：{suggestion.topic}",
+        ]
+        if profile_summary:
+            context_lines.append(f"用户画像：{profile_summary}")
+        if recent_messages:
+            context_lines.append("最近聊天：")
+            for message in recent_messages:
+                context_lines.append(f"- {message['role']}：{message['content']}")
+        if context_items:
+            context_lines.append("可参考的记忆和历史：")
+            for item in context_items:
+                context_lines.append(f"- {item.type}，相关度 {item.score:.3f}：{item.content}")
+
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "你是一个会主动发起对话的中文情感陪伴助手。"
+                    "现在不是回复用户消息，而是你在合适的时机主动开口。"
+                    "请结合时间、场景、用户画像、历史聊天和记忆，生成一句自然的主动开场。"
+                    "要求：像朋友一样温柔具体；不要说你在读取数据库或系统检测；不要超过 80 个中文字符；"
+                    "优先延续用户真实聊过的事情，不要突然引入无关知识库内容；"
+                    "优先用开放式问题邀请用户继续聊。"
+                ),
+            },
+            {
+                "role": "user",
+                "content": "\n".join(context_lines) + "\n\n请生成主动对话内容。",
+            },
+        ]
+        message = self.llm.generate_chat(
+            messages,
+            GenerationOptions(
+                max_tokens=min(self.settings.max_tokens, 96),
+                temperature=max(self.settings.temperature, 0.78),
+                top_p=self.settings.top_p,
+            ),
+        ).strip()
+        if not message:
+            message = suggestion.message
+
+        conversation_id = self.store.create_conversation(user_id, title=f"主动对话：{suggestion.trigger}")
+        self.store.add_message(
+            user_id=user_id,
+            role="assistant",
+            content=message,
+            conversation_id=conversation_id,
+        )
+        if persist:
+            self.store.add_proactive_event(
+                user_id,
+                suggestion.trigger,
+                message,
+                {"topic": suggestion.topic, "scenario": scenario, "generated": True},
+            )
+
+        payload = suggestion.__dict__.copy()
+        payload.update(
+            {
+                "message": message,
+                "generated": True,
+                "conversation_id": conversation_id,
+                "context": [to_used_context(item).model_dump() for item in context_items],
+            }
+        )
+        return payload
 
     def retrieve_context(self, request: ChatRequest) -> RetrievedContext:
         profile_summary = self.store.get_profile_summary(request.user_id)

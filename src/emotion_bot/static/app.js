@@ -29,6 +29,10 @@ const el = {
   profileSummary: document.querySelector("#profileSummary"),
   contextList: document.querySelector("#contextList"),
   docTitle: document.querySelector("#docTitle"),
+  docFile: document.querySelector("#docFile"),
+  docFileName: document.querySelector("#docFileName"),
+  docEncoding: document.querySelector("#docEncoding"),
+  docFileMeta: document.querySelector("#docFileMeta"),
   docContent: document.querySelector("#docContent"),
   ingestBtn: document.querySelector("#ingestBtn"),
   memoryList: document.querySelector("#memoryList"),
@@ -69,6 +73,12 @@ function bindEvents() {
     renderWelcome();
   });
   el.ingestBtn.addEventListener("click", ingestDocument);
+  el.docFile.addEventListener("change", loadSelectedDocumentFile);
+  el.docEncoding.addEventListener("change", () => {
+    if (el.docFile.files && el.docFile.files[0]) {
+      loadSelectedDocumentFile();
+    }
+  });
   el.chatForm.addEventListener("submit", sendMessage);
   el.messageInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -268,13 +278,15 @@ async function ingestDocument() {
     const data = await apiPost("/api/documents", {
       title,
       content,
-      source: "web-ui",
+      source: el.docFile.files && el.docFile.files[0] ? `web-file:${el.docFile.files[0].name}` : "web-ui",
       user_id: currentUserId(),
       weight: Number(el.documentWeight.value),
     });
     appendMessage("assistant", `已写入知识库，分片 ${data.chunks} 个。`, "系统");
     el.docTitle.value = "";
     el.docContent.value = "";
+    el.docFile.value = "";
+    resetFilePicker();
   } catch (error) {
     appendMessage("assistant", `知识库写入失败：${error.message}`, "错误");
   } finally {
@@ -282,12 +294,62 @@ async function ingestDocument() {
   }
 }
 
-async function checkProactive(manual = false, force = false, appendToChat = true) {
+function loadSelectedDocumentFile() {
+  const file = el.docFile.files && el.docFile.files[0];
+  if (!file) {
+    resetFilePicker();
+    return;
+  }
+
+  const maxBytes = 4 * 1024 * 1024;
+  if (file.size > maxBytes) {
+    el.docFile.value = "";
+    el.docFileName.textContent = "文件过大";
+    el.docFileMeta.textContent = "请选择 4MB 以内的文本文件";
+    appendMessage("assistant", "文件过大，请选择 4MB 以内的文本文件。", "系统");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const content = String(reader.result || "").trim();
+    if (!content) {
+      el.docFileMeta.textContent = "文件内容为空或无法读取";
+      return;
+    }
+    if (!el.docTitle.value.trim()) {
+      el.docTitle.value = file.name.replace(/\.[^.]+$/, "");
+    }
+    el.docContent.value = content;
+    el.docFileName.textContent = file.name;
+    el.docFileMeta.textContent = `${file.name} · ${formatBytes(file.size)} · ${el.docEncoding.value.toUpperCase()}`;
+  };
+  reader.onerror = () => {
+    el.docFileName.textContent = "读取失败";
+    el.docFileMeta.textContent = "请确认它是文本文件";
+    appendMessage("assistant", "文件读取失败，请确认它是文本文件。", "系统");
+  };
+  reader.readAsText(file, el.docEncoding.value);
+}
+
+function resetFilePicker() {
+  el.docFileName.textContent = "选择知识文件";
+  el.docFileMeta.textContent = "支持 txt / md / csv / json / log";
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+}
+
+async function checkProactive(manual = false, force = false, appendToChat = true, generate = false) {
   try {
     const params = new URLSearchParams({
       user_id: currentUserId(),
       persist: "true",
       force: force ? "true" : "false",
+      generate: generate ? "true" : "false",
     });
     const scenario = el.scenarioInput.value.trim();
     if (scenario) params.set("scenario", scenario);
@@ -317,15 +379,22 @@ async function checkProactive(manual = false, force = false, appendToChat = true
 async function startProactiveConversation() {
   if (state.sending) return;
   el.startTalkBtn.disabled = true;
+  appendTyping();
   try {
-    const data = await checkProactive(false, true, false);
+    const data = await checkProactive(false, true, false, true);
+    removeTyping();
     if (data && data.active && data.message) {
+      if (data.conversation_id) {
+        state.conversationId = data.conversation_id;
+      }
       appendMessage("assistant", data.message, `主动对话：${data.trigger}`);
+      renderContexts(data.context || []);
       if (el.ttsToggle.checked) {
         speak(data.message);
       }
     }
   } catch (error) {
+    removeTyping();
     appendMessage("assistant", `主动对话失败：${error.message}`, "错误");
   } finally {
     el.startTalkBtn.disabled = false;

@@ -118,7 +118,19 @@ def proactive_check(
     scenario: str | None = Query(default=None, max_length=120),
     persist: bool = Query(default=True),
     force: bool = Query(default=False),
+    generate: bool = Query(default=False),
 ) -> dict:
+    if generate:
+        try:
+            return chat_service.generate_proactive_message(
+                user_id=user_id,
+                scenario=scenario,
+                force=force,
+                persist=persist,
+            )
+        except LLMError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+
     suggestion = proactive_engine.check(
         user_id=user_id,
         scenario=scenario,
