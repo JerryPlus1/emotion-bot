@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Emotion Bot 记忆实验室</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body class="lab-body">
+    <main class="lab-shell">
+      <section class="lab-hero">
+        <div>
+          <p class="lab-eyebrow">Emotion Bot</p>
+          <h1>记忆实验室</h1>
+          <p class="lab-copy">这里专门用来验证长期记忆、历史召回和主动发起对话。现在你可以自己输入测试语料，也可以一键清空当前测试用户的数据重新来一轮。</p>
+        </div>
+        <a class="toolbar-button secondary" href="/">
+          <i data-lucide="arrow-left"></i>
+          <span>返回聊天</span>
+        </a>
+      </section>
+
+      <section class="lab-grid">
+        <article class="panel lab-card">
+          <h2>测试配置</h2>
+          <label for="labUserId">测试用户</label>
+          <input id="labUserId" type="text" value="memory-lab-user" />
+
+          <label for="labSeedMessage">写入消息</label>
+          <textarea id="labSeedMessage" rows="4">我叫小周，我喜欢夜跑，我最近在准备转岗面试。</textarea>
+
+          <label for="labRecallMessage">召回提问</label>
+          <textarea id="labRecallMessage" rows="3">你还记得我最近在准备什么吗？</textarea>
+
+          <label for="labScenario">主动对话场景</label>
+          <input id="labScenario" type="text" value="工作" />
+
+          <div class="lab-actions">
+            <button id="resetUserBtn" class="toolbar-button secondary compact" type="button">
+              <i data-lucide="rotate-ccw"></i>
+              <span>重置用户</span>
+            </button>
+            <button id="runMemoryTestBtn" class="toolbar-button primary compact" type="button">
+              <i data-lucide="brain"></i>
+              <span>测试记忆</span>
+            </button>
+            <button id="runProactiveTestBtn" class="toolbar-button compact" type="button">
+              <i data-lucide="message-circle-heart"></i>
+              <span>测试主动对话</span>
+            </button>
+          </div>
+        </article>
+
+        <article class="panel lab-card">
+          <h2>推荐测试方案</h2>
+          <ol class="lab-steps">
+            <li>先点一次“重置用户”，确保本轮测试没有旧数据干扰。</li>
+            <li>在“写入消息”里填入你希望机器人记住的信息，比如名字、偏好、近期计划。</li>
+            <li>在“召回提问”里写一个追问，比如“你还记得我最近在准备什么吗？”。</li>
+            <li>点击“测试记忆”，观察是否命中了长期记忆或历史消息。</li>
+            <li>再点击“测试主动对话”，看主动开场是否会结合刚才输入的内容。</li>
+          </ol>
+        </article>
+      </section>
+
+      <section class="lab-grid">
+        <article class="panel lab-card">
+          <h2>记忆测试结果</h2>
+          <pre id="memoryTestResult">尚未开始</pre>
+        </article>
+
+        <article class="panel lab-card">
+          <h2>主动对话结果</h2>
+          <pre id="proactiveTestResult">尚未开始</pre>
+        </article>
+      </section>
+
+      <section class="panel lab-card">
+        <h2>最近记忆快照</h2>
+        <div id="labMemorySnapshot" class="memory-list"></div>
+      </section>
+    </main>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="/static/memory-lab.js"></script>
+  </body>
+</html>

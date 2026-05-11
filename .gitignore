@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local model files
+model/
+
+# Local runtime data
+data/*.sqlite3
+data/*.sqlite3-*
