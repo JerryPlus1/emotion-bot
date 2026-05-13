@@ -1,0 +1,13 @@
+# AI 主动提问系统依赖
+# 安装: pip install -r requirements.txt
+
+# 核心依赖
+torch>=2.0.0
+transformers>=4.40.0
+accelerate>=0.20.0
+
+# HTTP 客户端（备用，如需 API 调用）
+httpx>=0.25.0
+
+# 可选：加速推理
+bitsandbytes>=0.40.0  # 8-bit 量化支持
