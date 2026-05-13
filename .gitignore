@@ -67,6 +67,12 @@ node_modules/
 # Ignore all files except proactive_questioning and try.py
 *
 !proactive_questioning/
+!proactive_questioning/*
+!proactive_questioning/src/
+!proactive_questioning/src/handlers/
+!proactive_questioning/src/handlers/*
+!proactive_questioning/src/models
+!proactive_questioning/src/models/*
 !try.py
 
 # In proactive_questioning, ignore specific subdirs
