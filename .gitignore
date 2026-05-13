@@ -64,6 +64,13 @@ htmlcov/
 # Node (if any)
 node_modules/
 
-# All files except try.py
-*.*
+# Ignore all files except proactive_questioning and try.py
+*
+!proactive_questioning/
 !try.py
+
+# In proactive_questioning, ignore specific subdirs
+proactive_questioning/__pycache__/
+proactive_questioning/external_knowledge_base/
+proactive_questioning/literature-books-master/
+proactive_questioning/rag_knowledge_base/
