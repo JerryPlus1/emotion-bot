@@ -69,10 +69,7 @@ node_modules/
 !proactive_questioning/
 !proactive_questioning/*
 !proactive_questioning/src/
-!proactive_questioning/src/handlers/
-!proactive_questioning/src/handlers/*
-!proactive_questioning/src/models
-!proactive_questioning/src/models/*
+!proactive_questioning/src/**
 !try.py
 
 # In proactive_questioning, ignore specific subdirs
