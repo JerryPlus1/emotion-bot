@@ -64,21 +64,49 @@ htmlcov/
 # Node (if any)
 node_modules/
 
-# Ignore all files except proactive_questioning and try.py
-*
-!proactive_questioning/
-!proactive_questioning/*
-!proactive_questioning/src/
-!proactive_questioning/src/**
-!try.py
+# ============================================
+# proactive_questioning 目录
+# ============================================
 
-# In proactive_questioning, ignore specific subdirs
-proactive_questioning/__pycache__/
+# 忽略所有文件，然后只上传代码文件
+*
+
+# 允许上传目录
+!proactive_questioning/
+
+# 只允许上传这些子目录和文件
+!proactive_questioning/config/
+!proactive_questioning/core/
+!proactive_questioning/rag/
+!proactive_questioning/main.py
+!proactive_questioning/requirements.txt
+
+# 允许上传各目录下的 .py 文件
+!proactive_questioning/config/*.py
+!proactive_questioning/core/*.py
+!proactive_questioning/core/**/*.py
+!proactive_questioning/rag/*.py
+
+# ============================================
+# proactive_questioning 忽略的文件
+# ============================================
+
+# 数据和知识库目录
 proactive_questioning/external_knowledge_base/
-proactive_questioning/literature-books-master/
 proactive_questioning/rag_knowledge_base/
+
+# 数据文件
 proactive_questioning/knowledge.json
-proactive_questioning/literature-books-master.zip
+proactive_questioning/memory.db
 proactive_questioning/proactive_chat_history.json
 proactive_questioning/reminders.json
+proactive_questioning/user_state.json
+
+# 临时/未命名文件
 proactive_questioning/Untitled
+
+# Python 缓存
+proactive_questioning/__pycache__/
+proactive_questioning/*/__pycache__/
+proactive_questioning/*/*/__pycache__/
+proactive_questioning/*/*/*/__pycache__/
