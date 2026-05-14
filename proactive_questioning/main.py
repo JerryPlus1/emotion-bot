@@ -25,8 +25,8 @@ from config import (
     SESSION_COOLDOWN_SECONDS,
     FORCE_ASK_AFTER_COOLDOWN,
 )
-from logger import info, debug, error
-from store import (
+from core.logger import info, debug, error
+from core.store import (
     load_store,
     save_store,
     cooldown_blocks,
@@ -34,14 +34,24 @@ from store import (
     messages_nonempty,
 )
 
-from src.services import (
+from core.services import (
     ChatService,
     ReminderService,
     ProactivityService,
     UserService,
 )
-from src.models.session import SessionType
+from core.models.session import SessionType
 
+
+def _get_msg_attr(m, key: str, default: str = "") -> str:
+    """获取消息属性，兼容字典和ChatMessage对象"""
+    if isinstance(m, dict):
+        return m.get(key, default)
+    if key == "role":
+        return m.role.value if hasattr(m.role, 'value') else str(m.role)
+    if key == "content":
+        return m.content
+    return default
 
 class ProactiveChatSystem:
     """主动聊天系统"""
@@ -150,8 +160,8 @@ class ProactiveChatSystem:
 
         # 检查最后一条消息是否是用户消息
         for m in reversed(messages):
-            role = m.get("role", "")
-            content = m.get("content", "")
+            role = _get_msg_attr(m, "role", "")
+            content = _get_msg_attr(m, "content", "")
 
             if role == "assistant":
                 break  # 遇到助手消息停止
@@ -159,8 +169,9 @@ class ProactiveChatSystem:
             if role == "user" and content.strip():
                 # 检查是否是在系统主动消息之后
                 for prev in reversed(messages):
-                    if prev.get("role") == "assistant":
-                        prev_content = prev.get("content", "")
+                    prev_role = _get_msg_attr(prev, "role", "")
+                    if prev_role == "assistant":
+                        prev_content = _get_msg_attr(prev, "content", "")
                         # 如果上一条是系统主动发起的对话
                         if self._is_proactive_opening(prev_content):
                             return {
