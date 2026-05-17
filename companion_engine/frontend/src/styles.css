@@ -1,0 +1,386 @@
+:root {
+  color: #20242c;
+  background: #eef2f5;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  font-size: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button,
+textarea,
+input {
+  font: inherit;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.app-header {
+  align-items: center;
+  background: #ffffff;
+  border-bottom: 1px solid #d8dee6;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  padding: 18px 24px;
+}
+
+.app-header h1 {
+  font-size: 24px;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.app-header p {
+  color: #657083;
+  margin: 4px 0 0;
+}
+
+.header-controls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.status-pill,
+.meta-pill,
+.toggle-row {
+  align-items: center;
+  background: #f2f5f8;
+  border: 1px solid #d8dee6;
+  border-radius: 6px;
+  display: inline-flex;
+  gap: 8px;
+  min-height: 36px;
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+
+.status-pill.ok {
+  background: #e8f7ee;
+  border-color: #b8dfc7;
+  color: #146b3a;
+}
+
+.status-pill.bad {
+  background: #fff1f0;
+  border-color: #f0b8b2;
+  color: #9b2c22;
+}
+
+.primary-button,
+.secondary-button {
+  border: 1px solid #1d4f91;
+  border-radius: 6px;
+  cursor: pointer;
+  min-height: 38px;
+  padding: 8px 14px;
+}
+
+.primary-button {
+  background: #1d4f91;
+  color: #ffffff;
+}
+
+.primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.secondary-button {
+  background: #ffffff;
+  color: #1d4f91;
+}
+
+.error-banner {
+  background: #fff1f0;
+  border-bottom: 1px solid #f0b8b2;
+  color: #9b2c22;
+  padding: 10px 24px;
+}
+
+.dashboard-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(320px, 1.1fr) minmax(280px, 0.9fr) minmax(320px, 1fr);
+  grid-template-rows: minmax(520px, calc(100vh - 220px)) auto;
+  padding: 16px;
+}
+
+.panel {
+  background: #ffffff;
+  border: 1px solid #d8dee6;
+  border-radius: 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.panel-header {
+  align-items: center;
+  border-bottom: 1px solid #d8dee6;
+  display: flex;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 12px 14px;
+}
+
+.panel-header h2 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 520px;
+}
+
+.message-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  padding: 14px;
+}
+
+.message-row {
+  display: flex;
+}
+
+.message-row.user {
+  justify-content: flex-end;
+}
+
+.message-row.assistant,
+.message-row.system {
+  justify-content: flex-start;
+}
+
+.message-bubble {
+  border-radius: 8px;
+  line-height: 1.55;
+  max-width: min(78%, 560px);
+  padding: 10px 12px;
+  white-space: pre-wrap;
+}
+
+.message-row.user .message-bubble {
+  background: #1d4f91;
+  color: #ffffff;
+}
+
+.message-row.assistant .message-bubble {
+  background: #edf4f1;
+  color: #20332d;
+}
+
+.message-row.system .message-bubble {
+  background: #f2f5f8;
+  color: #657083;
+}
+
+.chat-input-row {
+  border-top: 1px solid #d8dee6;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr auto;
+  padding: 12px;
+}
+
+.chat-input-row textarea {
+  border: 1px solid #c7d0da;
+  border-radius: 8px;
+  min-height: 76px;
+  padding: 10px;
+  resize: vertical;
+}
+
+.debug-panel,
+.state-panel {
+  min-height: 520px;
+  overflow-y: auto;
+}
+
+.debug-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 14px;
+}
+
+.debug-field,
+.hardware-grid > div {
+  background: #f6f8fa;
+  border: 1px solid #dfe5ec;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px;
+}
+
+.debug-field span,
+.hardware-grid span {
+  color: #657083;
+  font-size: 12px;
+}
+
+.debug-field strong,
+.hardware-grid strong {
+  overflow-wrap: anywhere;
+}
+
+.json-block {
+  background: #111827;
+  color: #d5e4ff;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0 14px 14px;
+  overflow: auto;
+  padding: 12px;
+}
+
+.json-block.compact {
+  margin: 0;
+  max-height: 220px;
+}
+
+.state-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+}
+
+.state-section h3 {
+  font-size: 13px;
+  margin: 0 0 6px;
+}
+
+.hardware-panel {
+  grid-column: 1 / -1;
+}
+
+.hardware-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 14px;
+}
+
+.hardware-speech p {
+  line-height: 1.5;
+  margin: 0;
+}
+
+.empty-text {
+  color: #657083;
+  margin: 14px;
+}
+
+.humanlike-panel {
+  min-height: 520px;
+  overflow-y: auto;
+}
+
+.compare-block {
+  display: grid;
+  gap: 8px;
+  padding: 0 14px 14px;
+}
+
+.compare-block h3 {
+  font-size: 13px;
+  margin: 0;
+}
+
+.compare-block p {
+  background: #f6f8fa;
+  border: 1px solid #dfe5ec;
+  border-radius: 6px;
+  line-height: 1.55;
+  margin: 0;
+  min-height: 44px;
+  overflow-wrap: anywhere;
+  padding: 10px;
+}
+
+.persona-form {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.persona-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.persona-form label span {
+  color: #657083;
+  font-size: 12px;
+}
+
+.persona-form select {
+  background: #ffffff;
+  border: 1px solid #c7d0da;
+  border-radius: 6px;
+  min-height: 36px;
+  padding: 7px 8px;
+}
+
+@media (max-width: 1100px) {
+  .app-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .header-controls {
+    justify-content: flex-start;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+  }
+
+  .hardware-panel {
+    grid-column: auto;
+  }
+
+  .hardware-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .app-header,
+  .dashboard-grid {
+    padding: 12px;
+  }
+
+  .chat-input-row,
+  .debug-grid,
+  .hardware-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .message-bubble {
+    max-width: 92%;
+  }
+}
