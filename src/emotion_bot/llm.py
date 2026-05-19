@@ -98,27 +98,33 @@ class LlamaCppLLM(BaseLLM):
     def generate(self, prompt: str, options: GenerationOptions) -> str:
         with self._lock:
             model = self._load()
-            result = model(
-                prompt,
-                max_tokens=options.max_tokens,
-                temperature=options.temperature,
-                top_p=options.top_p,
-                stop=["<|im_end|>", "<|endoftext|>", "\n用户："],
-                echo=False,
-            )
+            try:
+                result = model(
+                    prompt,
+                    max_tokens=options.max_tokens,
+                    temperature=options.temperature,
+                    top_p=options.top_p,
+                    stop=["<|im_end|>", "<|endoftext|>", "\n用户："],
+                    echo=False,
+                )
+            except ValueError as exc:
+                raise LLMError(f"模型上下文过长，请减少输入或相关上下文：{exc}") from exc
         text = result["choices"][0]["text"].strip()
         return text or "我在认真想，但这次没有生成出有效回复。你可以换一种说法再试试。"
 
     def generate_chat(self, messages: list[dict[str, str]], options: GenerationOptions) -> str:
         with self._lock:
             model = self._load()
-            result: dict[str, Any] = model.create_chat_completion(
-                messages=messages,
-                max_tokens=options.max_tokens,
-                temperature=options.temperature,
-                top_p=options.top_p,
-                stop=["<|im_end|>", "<|endoftext|>"],
-            )
+            try:
+                result: dict[str, Any] = model.create_chat_completion(
+                    messages=messages,
+                    max_tokens=options.max_tokens,
+                    temperature=options.temperature,
+                    top_p=options.top_p,
+                    stop=["<|im_end|>", "<|endoftext|>"],
+                )
+            except ValueError as exc:
+                raise LLMError(f"模型上下文过长，请减少输入或相关上下文：{exc}") from exc
         text = result["choices"][0]["message"]["content"].strip()
         return text or "我在认真想，但这次没有生成出有效回复。你可以换一种说法再试试。"
 
