@@ -16,6 +16,13 @@ from .proactive import ProactiveEngine
 from .storage import MemoryStore, SearchResult
 
 MemoryMode = Literal["auto", "always", "off"]
+CHAT_CONTEXT_BUDGET = 1400
+CHAT_ITEM_BUDGET = 360
+CHAT_PROFILE_BUDGET = 420
+CHAT_USER_BUDGET = 1400
+PROACTIVE_CONTEXT_BUDGET = 1200
+PROACTIVE_ITEM_BUDGET = 240
+PROACTIVE_RECENT_MESSAGE_BUDGET = 180
 
 
 class ChatRequest(BaseModel):
@@ -89,11 +96,7 @@ class ChatService:
         messages = self.build_messages(request, retrieved)
         reply = self.llm.generate_chat(
             messages,
-            GenerationOptions(
-                max_tokens=self.settings.max_tokens,
-                temperature=self.settings.temperature,
-                top_p=self.settings.top_p,
-            ),
+            self._generation_options(messages),
         )
         user_message_id = self.store.add_message(
             user_id=user_id,
@@ -157,15 +160,20 @@ class ChatService:
             f"候选主题：{suggestion.topic}",
         ]
         if profile_summary:
-            context_lines.append(f"用户画像：{profile_summary}")
+            context_lines.append(f"用户画像：{clip_text(profile_summary, CHAT_PROFILE_BUDGET)}")
         if recent_messages:
             context_lines.append("最近聊天：")
             for message in recent_messages:
-                context_lines.append(f"- {message['role']}：{message['content']}")
+                context_lines.append(
+                    f"- {message['role']}：{clip_text(message['content'], PROACTIVE_RECENT_MESSAGE_BUDGET)}"
+                )
         if context_items:
             context_lines.append("可参考的记忆和历史：")
             for item in context_items:
-                context_lines.append(f"- {item.type}，相关度 {item.score:.3f}：{item.content}")
+                context_lines.append(
+                    f"- {item.type}，相关度 {item.score:.3f}：{clip_text(item.content, PROACTIVE_ITEM_BUDGET)}"
+                )
+        proactive_context = trim_lines(context_lines, PROACTIVE_CONTEXT_BUDGET)
 
         messages = [
             {
@@ -181,16 +189,12 @@ class ChatService:
             },
             {
                 "role": "user",
-                "content": "\n".join(context_lines) + "\n\n请生成主动对话内容。",
+                "content": proactive_context + "\n\n请生成主动对话内容。",
             },
         ]
         message = self.llm.generate_chat(
             messages,
-            GenerationOptions(
-                max_tokens=min(self.settings.max_tokens, 96),
-                temperature=max(self.settings.temperature, 0.78),
-                top_p=self.settings.top_p,
-            ),
+            self._generation_options(messages, max_new_tokens=96, min_new_tokens=48, temperature=0.78),
         ).strip()
         if not message:
             message = suggestion.message
@@ -287,19 +291,19 @@ class ChatService:
         context_lines = []
         if context.used and context.profile_summary:
             context_lines.append("【用户画像摘要】")
-            context_lines.append(context.profile_summary)
+            context_lines.append(clip_text(context.profile_summary, CHAT_PROFILE_BUDGET))
         if context.used and context.items:
             context_lines.append("【相关记忆与知识】")
             for index, item in enumerate(context.items, start=1):
                 source = item.metadata.get("kind") or item.metadata.get("title") or item.metadata.get("role") or item.type
                 context_lines.append(
-                    f"{index}. 来源={item.type}/{source}，相关度={item.score:.3f}：{item.content}"
+                    f"{index}. 来源={item.type}/{source}，相关度={item.score:.3f}：{clip_text(item.content, CHAT_ITEM_BUDGET)}"
                 )
         if request.scenario:
             context_lines.append("【当前场景】")
-            context_lines.append(request.scenario)
+            context_lines.append(clip_text(request.scenario, 180))
 
-        context_block = "\n".join(context_lines).strip() or "无。"
+        context_block = trim_lines(context_lines, CHAT_CONTEXT_BUDGET) or "无。"
         system = (
             "你是一个有长期记忆、RAG 检索和主动关怀能力的中文情感陪伴助手。"
             "你要自然、真诚、温柔、简洁地回应用户，优先提供情绪支持和可执行的小建议。"
@@ -309,10 +313,25 @@ class ChatService:
         )
         user = (
             f"以下是可能有用的上下文：\n{context_block}\n\n"
-            f"用户消息：{request.message}\n\n"
+            f"用户消息：{clip_text(request.message, CHAT_USER_BUDGET)}\n\n"
             "请直接回复用户。"
         )
         return [{"role": "system", "content": system}, {"role": "user", "content": user}]
+
+    def _generation_options(
+        self,
+        messages: list[dict[str, str]],
+        max_new_tokens: int | None = None,
+        min_new_tokens: int = 96,
+        temperature: float | None = None,
+    ) -> GenerationOptions:
+        prompt_size = sum(len(message["content"]) + len(message["role"]) + 12 for message in messages)
+        remaining = max(self.settings.n_ctx - prompt_size - 256, min_new_tokens)
+        return GenerationOptions(
+            max_tokens=max(min_new_tokens, min(max_new_tokens or self.settings.max_tokens, remaining)),
+            temperature=temperature if temperature is not None else self.settings.temperature,
+            top_p=self.settings.top_p,
+        )
 
     def build_prompt(self, request: ChatRequest, context: RetrievedContext) -> str:
         messages = self.build_messages(request, context)
@@ -325,6 +344,30 @@ def scale_scores(items: list[SearchResult], multiplier: float) -> list[SearchRes
         item.score *= multiplier
         scaled.append(item)
     return scaled
+
+
+def clip_text(text: str, max_chars: int) -> str:
+    clean = " ".join(str(text).split())
+    if len(clean) <= max_chars:
+        return clean
+    if max_chars <= 1:
+        return clean[:max_chars]
+    return clean[: max_chars - 1].rstrip() + "…"
+
+
+def trim_lines(lines: list[str], max_chars: int) -> str:
+    output: list[str] = []
+    total = 0
+    for line in lines:
+        addition = len(line) + 1
+        if total + addition > max_chars:
+            remaining = max_chars - total
+            if remaining > 12:
+                output.append(clip_text(line, remaining - 1))
+            break
+        output.append(line)
+        total += addition
+    return "\n".join(output).strip()
 
 
 def to_used_context(item: SearchResult) -> UsedContext:

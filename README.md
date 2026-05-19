@@ -14,6 +14,8 @@
 - 前端支持浏览器 TTS 朗读模型回复。
 - 附带 `记忆实验室` 页面，用于测试记忆召回和主动对话能力。
 
+
+
 ## 项目结构
 
 ```text
@@ -68,6 +70,13 @@ EMOTION_BOT_MODEL_PATH=model/your-model/model.gguf
 ```
 
 当前项目运行对话模型时调用的是 `.gguf` 文件，不是 `safetensors`。`safetensors` 更适合 Transformers/PyTorch 训练或 GPU 推理；本项目默认使用 GGUF 是为了本地部署更简单、内存占用更低。
+
+## 历史微调模型
+1. Qwen-3.5-2B-Fine-Tune: https://www.modelscope.cn/models/jiayi001/Qwen-3.5-2B-Fine-Tune
+2. Qwen2.5-3B-Finetune: https://www.modelscope.cn/models/jiayi001/Qwen2.5-3B-Finetune-ForAIToy
+3. qwen2-3b-q4_k_m: https://www.modelscope.cn/models/jiayi001/qwen2-3b-q4_k_m
+4. qwen3.5-2b-sft-merged: https://www.modelscope.cn/models/jiayi001/qwen35-2b-sft-merged
+
 
 ## 启动
 
@@ -319,19 +328,3 @@ curl -X POST http://127.0.0.1:8000/api/documents `
 - 推送前运行可用检查。
 - 不要提交本地密钥、SQLite 运行数据、日志或模型文件。
 
-## 当前限制与后续方向
-
-当前限制：
-
-- embedding 精度取决于当前后端；hashing embedding 只适合离线保底。
-- 主动对话仍然依赖规则触发，不是完全自主规划。
-- TTS 使用浏览器内置语音，不是模型原生语音合成。
-- 模型回复风格受当前 GGUF 模型能力影响。
-
-后续可扩展：
-
-- 增加可视化知识库重建入口和 embedding 缓存管理。
-- 增加记忆编辑、删除和人工确认机制。
-- 引入定时任务或桌面提醒，让主动对话不只依赖页面轮询。
-- 增加更细的人设控制和情绪陪伴 prompt 模板。
-- 为主动对话增加优先级和冷却策略配置。

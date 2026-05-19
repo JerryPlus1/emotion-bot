@@ -10,12 +10,12 @@ from zoneinfo import ZoneInfo
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from emotion_bot.chat import ChatRequest, ChatService
+from emotion_bot.chat import ChatRequest, ChatService, RetrievedContext
 from emotion_bot.config import AppSettings
 from emotion_bot.llm import MockLLM
 from emotion_bot.memory import MemoryManager, extract_memory_candidates
 from emotion_bot.proactive import ProactiveEngine
-from emotion_bot.storage import MemoryStore
+from emotion_bot.storage import MemoryStore, SearchResult
 
 
 class MemoryExtractionTests(unittest.TestCase):
@@ -88,6 +88,46 @@ class ChatServiceTests(unittest.TestCase):
             self.assertFalse(first.used_memory)
             self.assertTrue(second.used_memory)
             self.assertTrue(any(item.type == "memory" for item in second.used_contexts))
+
+    def test_long_retrieved_context_is_trimmed_before_generation(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            db_path = Path(temp_dir) / "memory.sqlite3"
+            store = MemoryStore(db_path)
+            manager = MemoryManager(store)
+            proactive = ProactiveEngine(store)
+            settings = AppSettings(db_path=db_path, llm_backend="mock", n_ctx=4096)
+            service = ChatService(settings, store, manager, MockLLM(), proactive)
+            long_text = "超长知识内容" * 600
+            messages_without_context = service.build_messages(
+                ChatRequest(user_id="alice", message="十二章的标题是什么？" * 300),
+                context=service.retrieve_context(
+                    ChatRequest(user_id="alice", message="无记忆", use_memory="off")
+                ),
+            )
+
+            messages_with_long_items = service.build_messages(
+                ChatRequest(user_id="alice", message="十二章的标题是什么？" * 300),
+                context=RetrievedContext(
+                    used=True,
+                    profile_summary=long_text,
+                    items=[
+                        SearchResult(
+                            id=index,
+                            type="document",
+                            content=long_text,
+                            score=0.9,
+                            weight=1.0,
+                            created_at="",
+                            metadata={"title": f"doc-{index}"},
+                        )
+                        for index in range(18)
+                    ],
+                ),
+            )
+
+            self.assertLess(sum(len(message["content"]) for message in messages_without_context), 4096)
+            self.assertLess(sum(len(message["content"]) for message in messages_with_long_items), 4096)
+            self.assertLessEqual(service._generation_options(messages_with_long_items).max_tokens, 512)
 
 
 if __name__ == "__main__":
